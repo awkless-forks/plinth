@@ -10,12 +10,21 @@
   import { player, toggle, seek, setVolume, next, prev, upcoming, canPrev, toggleShuffle, fmt } from "$lib/player.svelte";
   import { library } from "$lib/library.svelte";
   import { isFavorite, toggleFavorite } from "$lib/playlists.svelte";
+  import QueuePopover from "$lib/QueuePopover.svelte";
 
   let scrubbing = $state(false);
   let scrubPos = $state(0);
   let shownPos = $derived(scrubbing ? scrubPos : player.pos);
   let current = $derived(library.tracks.find((t) => t.path === player.track));
   let fav = $derived(isFavorite(player.track));
+
+  let queueOpen = $state(false);
+  let queueBox: HTMLElement;
+  let queueBtn: HTMLButtonElement;
+  function closeQueue() {
+    queueOpen = false;
+    queueBtn.focus();
+  }
 
   // reactive variables for marquee animation
   let titleW = $state(0);
@@ -36,6 +45,9 @@
     });
   });
 </script>
+
+<!-- click outside the queue panel closes it -->
+<svelte:window onpointerdown={(e) => queueOpen && !queueBox.contains(e.target as Node) && (queueOpen = false)} />
 
 <footer>
   <button class="icon" aria-label="Previous" onclick={prev} disabled={!canPrev()}><SkipBack size={24} /></button>
@@ -83,6 +95,15 @@
     }}
   />
   <span>{fmt(shownPos)} / {fmt(player.duration)}</span>
+  <div class="queue-box" bind:this={queueBox}>
+    <button
+      class="queue-btn"
+      bind:this={queueBtn}
+      aria-expanded={queueOpen}
+      onclick={() => (queueOpen = !queueOpen)}>Queue · {upcoming()}</button
+    >
+    {#if queueOpen}<QueuePopover onclose={closeQueue} />{/if}
+  </div>
   <input
     type="range"
     min="0"
@@ -125,6 +146,21 @@
   .play {
     width: 3rem;
     height: 3rem;
+  }
+  .queue-box {
+    position: relative; /* the queue panel opens above this */
+  }
+  .queue-btn {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid currentColor;
+    border-radius: var(--r);
+    background: none;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .queue-btn[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    border-color: var(--accent);
   }
   .title {
     flex: 0 0 12rem;

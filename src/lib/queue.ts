@@ -10,3 +10,12 @@ export function shuffleAfter<T>(items: T[], at: number, rand = Math.random): T[]
   return out;
 }
 
+// move one item; `at` (the playing index) follows so the same track stays current
+export function moveItem<T>(items: T[], at: number, from: number, to: number): [T[], number] {
+  const out = [...items];
+  out.splice(to, 0, ...out.splice(from, 1));
+  if (from === at) at = to;
+  else if (from < at && to >= at) at--;
+  else if (from > at && to <= at) at++;
+  return [out, at];
+}

@@ -35,7 +35,7 @@
       class:active={t.path === player.track}
       onpointerdown={(e) => (menued = e.button !== 0 || e.ctrlKey)}
       onkeydown={() => (menued = false)}
-      onclick={() => !menued && play(t.path, paths)}
+      onclick={() => !menued && play(t.path, paths, i)}
       oncontextmenu={(e) => {
         menued = true;
         if (!onmenu) return;

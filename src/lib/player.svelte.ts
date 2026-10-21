@@ -1,20 +1,42 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { shuffleAfter } from "$lib/queue";
+import { moveItem, shuffleAfter } from "$lib/queue";
 
 type PlayState = "playing" | "paused" | "stopped";
 
+// Two lists, like Spotify:
+// - context: the list a track was played from (album, artist, playlist, Tracks view), in its natural order
+// - queue: tracks the user added by hand; they play first, then the context goes on where it stopped
 export const player = $state({
   track: null as string | null,
   state: "stopped" as PlayState,
   pos: 0,
   duration: 0,
   volume: 1,
-  queue: [] as string[], // paths of the list the track was played from; next/prev walk this, not the current view
+  context: [] as string[],
+  at: -1, // index in context of the last context track played; an index, because a path can be listed twice
+  queue: [] as string[],
+  fromQueue: false, // the playing track came from the queue, not from context[at]
   shuffle: false,
+  canUndo: false,
 });
 
-let ordered: string[] = []; // the queue before shuffling, restored when shuffle turns off
+const start = (path: string) => invoke("play", { path });
+
+// context before shuffling, restored when shuffle turns off; null once the user reorders it by hand
+let ordered: string[] | null = null;
+type Snapshot = { context: string[]; queue: string[]; ordered: string[] | null; shuffle: boolean };
+let undo: Snapshot | null = null;
+
+// every change makes new arrays, so a snapshot never changes under us
+function snapshot() {
+  undo = { context: player.context, queue: player.queue, ordered, shuffle: player.shuffle };
+  player.canUndo = true;
+}
+function dropUndo() {
+  undo = null;
+  player.canUndo = false;
+}
 
 listen<string>("track_changed", (e) => {
   player.track = e.payload;
@@ -28,33 +50,99 @@ listen("track_ended", () => {
   next();
 });
 
-export const play = (path: string, queue?: string[]) => {
-  if (queue) {
-    ordered = queue;
-    // shuffle on: the clicked track plays first, the rest in random order
-    const i = queue.indexOf(path);
-    player.queue = player.shuffle ? shuffleAfter([path, ...queue.slice(0, i), ...queue.slice(i + 1)], 0) : queue;
-  }
-  return invoke("play", { path });
+export const playAt = (i: number) => {
+  player.at = i;
+  player.fromQueue = false;
+  return start(player.context[i]);
 };
-export const queueIdx = () => player.queue.indexOf(player.track ?? "");
-export function toggleShuffle() {
-  player.shuffle = !player.shuffle;
-  if (player.shuffle) {
-    ordered = player.queue;
-    player.queue = shuffleAfter(player.queue, queueIdx()); // only what comes after the current track
-  } else {
-    player.queue = ordered; // next/prev find the current track again by path
-  }
+// play queue item k; the items before it are skipped, like clicking ahead in Spotify's queue
+export function playQueued(k: number) {
+  const path = player.queue[k];
+  player.queue = player.queue.slice(k + 1);
+  player.fromQueue = true;
+  dropUndo(); // the queue moved on; an old snapshot would bring played tracks back
+  return start(path);
 }
-export const next = () => {
-  const i = queueIdx();
-  if (i >= 0 && i < player.queue.length - 1) play(player.queue[i + 1]);
-};
-export const prev = () => {
-  const i = queueIdx();
-  if (i > 0) play(player.queue[i - 1]);
-};
+
+// start a new context; `i` is the clicked row, so a song listed twice plays the right copy.
+// The hand-made queue stays and still plays before the rest of the new context.
+export function play(path: string, context: string[], i = context.indexOf(path)) {
+  dropUndo();
+  if (player.shuffle) {
+    // the clicked track plays first, the rest in random order
+    ordered = context;
+    player.context = shuffleAfter([path, ...context.slice(0, i), ...context.slice(i + 1)], 0);
+    return playAt(0);
+  }
+  ordered = null;
+  player.context = context;
+  return playAt(i);
+}
+
+export const contextLeft = () => Math.max(player.context.length - player.at - 1, 0);
+export const upcoming = () => player.queue.length + contextLeft();
+export const canPrev = () => (player.fromQueue ? player.at >= 0 : player.at > 0);
+
+export function next() {
+  if (player.queue.length) playQueued(0);
+  else if (contextLeft()) playAt(player.at + 1);
+}
+// from a queued track, "previous" is the context track that played before it
+export function prev() {
+  if (player.fromQueue) {
+    if (player.at >= 0) playAt(player.at);
+  } else if (player.at > 0) playAt(player.at - 1);
+}
+
+// shuffle mixes the rest of the context; the hand-made queue keeps its order
+export function toggleShuffle() {
+  snapshot();
+  player.shuffle = !player.shuffle;
+  const current = player.context[player.at];
+  if (player.shuffle) {
+    ordered = player.context;
+    player.context = shuffleAfter(player.context, player.at);
+  } else if (ordered) {
+    player.context = ordered;
+    player.at = ordered.indexOf(current);
+    ordered = null;
+  } // no `ordered`: the context was reordered while shuffled, so keep it as it is
+}
+
+// nothing playing: start the tracks instead of queueing them
+export function playNext(paths: string[]) {
+  if (!player.track) return void play(paths[0], paths, 0);
+  snapshot();
+  player.queue = [...paths, ...player.queue];
+}
+export function addToQueue(paths: string[]) {
+  if (!player.track) return void play(paths[0], paths, 0);
+  snapshot();
+  player.queue = [...player.queue, ...paths];
+}
+export function moveInQueue(from: number, to: number) {
+  snapshot();
+  [player.queue] = moveItem(player.queue, -1, from, to);
+}
+// indexes are absolute positions in context; `at` follows the current track
+export function moveInContext(from: number, to: number) {
+  snapshot();
+  ordered = null;
+  [player.context, player.at] = moveItem(player.context, player.at, from, to);
+}
+export function clearQueue() {
+  snapshot();
+  player.queue = [];
+}
+
+export function undoQueue() {
+  if (!undo) return;
+  const current = player.context[player.at];
+  ({ context: player.context, queue: player.queue, ordered, shuffle: player.shuffle } = undo);
+  player.at = player.context.indexOf(current);
+  dropUndo();
+}
+
 export const toggle = () => invoke(player.state === "playing" ? "pause" : "resume");
 export const seek = (secs: number) => {
   player.pos = Math.max(0, secs); // optimistic; Rust confirms on next tick

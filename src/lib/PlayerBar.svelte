@@ -7,14 +7,13 @@
   import Shuffle from "@lucide/svelte/icons/shuffle";
   import Heart from "@lucide/svelte/icons/heart";
   import ImageIcon from "@lucide/svelte/icons/image";
-  import { player, toggle, seek, setVolume, next, prev, queueIdx, toggleShuffle, fmt } from "$lib/player.svelte";
+  import { player, toggle, seek, setVolume, next, prev, upcoming, canPrev, toggleShuffle, fmt } from "$lib/player.svelte";
   import { library } from "$lib/library.svelte";
   import { isFavorite, toggleFavorite } from "$lib/playlists.svelte";
 
   let scrubbing = $state(false);
   let scrubPos = $state(0);
   let shownPos = $derived(scrubbing ? scrubPos : player.pos);
-  let idx = $derived(queueIdx());
   let current = $derived(library.tracks.find((t) => t.path === player.track));
   let fav = $derived(isFavorite(player.track));
 
@@ -39,11 +38,11 @@
 </script>
 
 <footer>
-  <button class="icon" aria-label="Previous" onclick={prev} disabled={idx <= 0}><SkipBack size={24} /></button>
+  <button class="icon" aria-label="Previous" onclick={prev} disabled={!canPrev()}><SkipBack size={24} /></button>
   <button class="icon play" aria-label={player.state === "playing" ? "Pause" : "Play"} onclick={toggle} disabled={!player.track}>
     {#if player.state === "playing"}<CirclePause size={36} />{:else}<CirclePlay size={36} />{/if}
   </button>
-  <button class="icon" aria-label="Next" onclick={next} disabled={idx < 0 || idx >= player.queue.length - 1}><SkipForward size={24} /></button>
+  <button class="icon" aria-label="Next" onclick={next} disabled={upcoming() <= 0}><SkipForward size={24} /></button>
   <button class="icon" class:on={player.shuffle} aria-pressed={player.shuffle} aria-label="Shuffle" onclick={toggleShuffle}>
     <Shuffle size={20} />
   </button>

@@ -1,5 +1,6 @@
 import { Menu } from "@tauri-apps/api/menu";
 import { playlists, add, addTracks, removeTrack } from "$lib/playlists.svelte";
+import { playNext, addToQueue } from "$lib/player.svelte";
 
 type Opts = {
   from?: { id: string; index: number }; // set when the row is inside a playlist
@@ -10,6 +11,9 @@ type Opts = {
 export async function trackMenu(path: string, { from, onnew }: Opts = {}) {
   const menu = await Menu.new({
     items: [
+      { text: "Play next", action: () => playNext([path]) },
+      { text: "Add to queue", action: () => addToQueue([path]) },
+      { item: "Separator" },
       {
         text: "Add to playlist",
         items: [

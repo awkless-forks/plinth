@@ -93,6 +93,11 @@
     border-radius: 4px;
     flex: none;
   }
+  button {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+  } 
   .title {
     flex: 0 0 12rem;
     overflow: hidden;

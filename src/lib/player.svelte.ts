@@ -17,11 +17,18 @@ export const player = $state({
   at: -1, // index in context of the last context track played; an index, because a path can be listed twice
   queue: [] as string[],
   fromQueue: false, // the playing track came from the queue, not from context[at]
+  history: [] as string[], // tracks played before the current one, oldest first
   shuffle: false,
   canUndo: false,
 });
 
-const start = (path: string) => invoke("play", { path });
+const HISTORY = 100; // shortcut: kept in memory only, cleared on restart; persist it if people ask
+let now: string | null = null; // set at once, before the track_changed event arrives
+function start(path: string) {
+  if (now) player.history = [...player.history, now].slice(-HISTORY);
+  now = path;
+  return invoke("play", { path });
+}
 
 // context before shuffling, restored when shuffle turns off; null once the user reorders it by hand
 let ordered: string[] | null = null;
@@ -55,6 +62,11 @@ export const playAt = (i: number) => {
   player.fromQueue = false;
   return start(player.context[i]);
 };
+// play one track (from history) without changing the context or the queue
+export function replay(path: string) {
+  player.fromQueue = true; // so ⏮ goes back to the list and ⏭ goes on with queue/list
+  return start(path);
+}
 // play queue item k; the items before it are skipped, like clicking ahead in Spotify's queue
 export function playQueued(k: number) {
   const path = player.queue[k];

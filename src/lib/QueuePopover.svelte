@@ -7,6 +7,7 @@
     player,
     playAt,
     playQueued,
+    replay,
     moveInQueue,
     moveInContext,
     clearQueue,
@@ -49,12 +50,27 @@
     >
   </header>
 
+  <!-- opens scrolled to the current track: scroll up for history, down for what's next -->
   <div class="lists">
+    {#if player.history.length}
+      <h3>Recently played</h3>
+      <ol>
+        {#each player.history as path, k (k)}
+          <li><button class="track past" onclick={() => replay(path)}><span class="cell">{title(path)}</span></button></li>
+        {/each}
+      </ol>
+    {/if}
+
     {#if player.track}
       <h3>Now playing</h3>
       <p
         class="current"
         aria-current="true"
+        {@attach (el: HTMLElement) => {
+          // put the "Now playing" heading at the top of the scroll box
+          const box = el.parentElement!;
+          box.scrollTop = el.previousElementSibling!.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        }}
       >
         <span class="mark"><Play size={14} fill="currentColor" /></span>
         <span class="cell">{title(player.track)}</span>
@@ -141,6 +157,10 @@
     min-height: 0;
     padding: 0.5rem;
     overflow: auto;
+  }
+  .past {
+    padding-left: 2rem;
+    opacity: 0.6;
   }
   h3 {
     margin: 0.75rem 0 0.25rem;

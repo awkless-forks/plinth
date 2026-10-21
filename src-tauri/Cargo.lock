@@ -2422,7 +2422,22 @@ dependencies = [
  "byteorder",
  "data-encoding",
  "flate2",
- "lofty_attr",
+ "lofty_attr 0.12.0",
+ "log",
+ "ogg_pager",
+ "paste",
+]
+
+[[package]]
+name = "lofty"
+version = "0.25.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb21dd79145b0781f2423fda92dd807fcd3911e44b66044d86db3b11ec7accf9"
+dependencies = [
+ "byteorder",
+ "data-encoding",
+ "flate2",
+ "lofty_attr 0.13.0",
  "log",
  "ogg_pager",
  "paste",
@@ -2437,6 +2452,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "lofty_attr"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdbca1b60ba7cea959ffc84ac27f3dbdbacd6dfda168c7eabbc00e48654bb9fd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -3185,6 +3211,8 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 name = "plinth"
 version = "0.1.0"
 dependencies = [
+ "base64 0.23.1",
+ "lofty 0.25.4",
  "rodio",
  "serde",
  "serde_json",
@@ -6274,7 +6302,7 @@ dependencies = [
  "dyn-clone",
  "futures-util",
  "id3",
- "lofty",
+ "lofty 0.24.0",
  "media-seek",
  "moka",
  "mp4ameta",

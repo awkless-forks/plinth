@@ -1,0 +1,45 @@
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
+
+export type Track = {
+  path: string;
+  title: string;
+  artist: string | null;
+  album_artist: string | null;
+  album: string | null;
+  track_no: number | null;
+  disc: number | null;
+  year: number | null;
+  secs: number;
+};
+
+export const library = $state({
+  tracks: [] as Track[],
+  folder: null as string | null,
+});
+
+export async function load(dir: string) {
+  library.folder = dir;
+  localStorage.setItem("folder", dir);
+  library.tracks = await invoke<Track[]>("scan_folder", { path: dir });
+}
+export async function pick() {
+  const dir = await open({ directory: true });
+  if (dir) load(dir);
+}
+const saved = localStorage.getItem("folder");
+if (saved) load(saved);
+
+// album artist groups compilations; untagged fields get an explicit "Unknown"
+export const artistOf = (t: Track) => t.album_artist ?? t.artist ?? "Unknown Artist";
+// same album name by different artists must stay separate; no album tag = not in any album (yt downloads)
+export const albumKey = (t: Track) => (t.album ? `${artistOf(t)}\0${t.album}` : null);
+// [key, track count], sorted by key
+export const group = (tracks: Track[], key: (t: Track) => string | null) => {
+  const m = new Map<string, number>();
+  for (const t of tracks) {
+    const k = key(t);
+    if (k !== null) m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m].sort((a, b) => a[0].localeCompare(b[0]));
+};

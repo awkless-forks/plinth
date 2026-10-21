@@ -9,6 +9,7 @@ export const player = $state({
   pos: 0,
   duration: 0,
   volume: 1,
+  queue: [] as string[], // paths of the list the track was played from; next/prev walk this, not the current view
 });
 
 listen<string>("track_changed", (e) => {
@@ -20,9 +21,22 @@ listen<[number, number]>("position", (e) => ([player.pos, player.duration] = e.p
 listen("track_ended", () => {
   player.state = "stopped";
   player.pos = 0;
+  next();
 });
 
-export const play = (path: string) => invoke("play", { path });
+export const play = (path: string, queue?: string[]) => {
+  if (queue) player.queue = queue;
+  return invoke("play", { path });
+};
+export const queueIdx = () => player.queue.indexOf(player.track ?? "");
+export const next = () => {
+  const i = queueIdx();
+  if (i >= 0 && i < player.queue.length - 1) play(player.queue[i + 1]);
+};
+export const prev = () => {
+  const i = queueIdx();
+  if (i > 0) play(player.queue[i - 1]);
+};
 export const toggle = () => invoke(player.state === "playing" ? "pause" : "resume");
 export const seek = (secs: number) => {
   player.pos = Math.max(0, secs); // optimistic; Rust confirms on next tick

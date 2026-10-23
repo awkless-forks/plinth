@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { moveItem, shuffleAfter } from "$lib/queue";
+import { moveItem, shuffleFrom } from "$lib/queue";
 
 type PlayState = "playing" | "paused" | "stopped";
 
@@ -83,7 +83,7 @@ export function play(path: string, context: string[], i = context.indexOf(path))
   if (player.shuffle) {
     // the clicked track plays first, the rest in random order
     ordered = context;
-    player.context = shuffleAfter([path, ...context.slice(0, i), ...context.slice(i + 1)], 0);
+    player.context = shuffleFrom(context, i);
     return playAt(0);
   }
   ordered = null;
@@ -106,14 +106,15 @@ export function prev() {
   } else if (player.at > 0) playAt(player.at - 1);
 }
 
-// shuffle mixes the rest of the context; the hand-made queue keeps its order
+// shuffle mixes every other context track, also the ones already played; the hand-made queue keeps its order
 export function toggleShuffle() {
   snapshot();
   player.shuffle = !player.shuffle;
   const current = player.context[player.at];
   if (player.shuffle) {
     ordered = player.context;
-    player.context = shuffleAfter(player.context, player.at);
+    player.context = shuffleFrom(player.context, player.at);
+    if (player.at >= 0) player.at = 0;
   } else if (ordered) {
     player.context = ordered;
     player.at = ordered.indexOf(current);

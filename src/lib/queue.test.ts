@@ -1,6 +1,6 @@
 // @ts-expect-error bun's built-in test module; run with `bun test src/lib` (no @types/bun installed)
 import { expect, test } from "bun:test";
-import { moveItem, shuffleAfter } from "./queue";
+import { moveItem, shuffleAfter, shuffleFrom } from "./queue";
 
 test("moveItem keeps the playing track current", () => {
   const q = ["a", "b", "c", "d", "e"]; // "c" playing, at = 2
@@ -31,4 +31,13 @@ test("shuffleAfter moves items", () => {
 test("shuffleAfter handles empty and short lists", () => {
   expect(shuffleAfter([], -1)).toEqual([]);
   expect(shuffleAfter(["a"], 0)).toEqual(["a"]);
+});
+
+test("shuffleFrom puts the current item first and keeps all the others", () => {
+  const q = ["a", "b", "c", "d"];
+  const s = shuffleFrom(q, 3); // last track playing: the rest must still come after it
+  expect(s[0]).toBe("d");
+  expect([...s].sort()).toEqual(q);
+  expect([...shuffleFrom(q, -1)].sort()).toEqual(q); // nothing playing: shuffle all
+  expect(q).toEqual(["a", "b", "c", "d"]); // input not changed
 });

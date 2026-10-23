@@ -10,6 +10,13 @@ export function shuffleAfter<T>(items: T[], at: number, rand = Math.random): T[]
   return out;
 }
 
+// shuffle mode order: the item at `at` first, then all the others (before and after it) in random order,
+// so turning shuffle on at the last track still plays the rest of the list
+export function shuffleFrom<T>(items: T[], at: number, rand = Math.random): T[] {
+  if (at < 0) return shuffleAfter(items, -1, rand);
+  return shuffleAfter([items[at], ...items.slice(0, at), ...items.slice(at + 1)], 0, rand);
+}
+
 // move one item; `at` (the playing index) follows so the same track stays current
 export function moveItem<T>(items: T[], at: number, from: number, to: number): [T[], number] {
   const out = [...items];

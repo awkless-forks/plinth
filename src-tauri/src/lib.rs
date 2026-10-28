@@ -141,7 +141,8 @@ async fn download_audio(
         .arg("-o")
         .arg(&output_template)
         .arg("--no-playlist")
-        .arg("--force-ipv4")
+        // only deno is on by default; let YouTube's JS challenges use whichever runtime is installed
+        .args(["--js-runtimes", "deno", "--js-runtimes", "node", "--js-runtimes", "bun", "--js-runtimes", "quickjs"])
         // --print implies quiet, so progress needs asking for explicitly
         .arg("--newline")
         .arg("--progress")

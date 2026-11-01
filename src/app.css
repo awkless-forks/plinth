@@ -120,11 +120,11 @@ h3 {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: var(--cols, 2.5rem 3fr 2fr 2fr 3.5rem 3.5rem);
-  gap: 16px;
+  gap: 8px;
   align-items: center;
   width: 100%;
-  min-height: 48px;
-  padding: 0 12px;
+  min-height: 28px;
+  padding: 0 6px;
   border-radius: var(--radius-row);
   color: var(--muted);
 }
@@ -137,12 +137,15 @@ button.row {
 button.row:hover {
   background: var(--surface);
 }
+button.row.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent); /* the playing song stays marked where it is in the list */
+}
 button.row.active .id,
 button.row.active .num:first-child {
   color: var(--accent); /* the playing track: its title and marker only */
 }
 .head {
-  min-height: 36px;
+  min-height: 28px;
   font-size: var(--fs-small);
   color: var(--faint);
 }

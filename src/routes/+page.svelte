@@ -9,11 +9,10 @@
   import Folder from "@lucide/svelte/icons/folder";
   import LinkIcon from "@lucide/svelte/icons/link";
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
-  import ImageIcon from "@lucide/svelte/icons/image";
   import Sun from "@lucide/svelte/icons/sun";
   import Moon from "@lucide/svelte/icons/moon";
   import { player, play, toggle, seek, setVolume, next, prev, fmt } from "$lib/player.svelte";
-  import { library, pick, artistOf, albumKey, group, matches, coverOf, type Track } from "$lib/library.svelte";
+  import { library, pick, artistOf, albumKey, group, matches, type Track } from "$lib/library.svelte";
   import { playlists, add, rename, remove, moveTrack, type Playlist } from "$lib/playlists.svelte";
   import { trackMenu } from "$lib/menu";
   import Download from "$lib/Download.svelte";
@@ -80,14 +79,8 @@
   let plTracks = $derived(pl ? tracksOf(pl) : []);
   let folderName = $derived(library.folder?.split(/[\\/]/).filter(Boolean).pop());
 
-  // the open artist, album or playlist: its tracks and the cover of its first track
+  // the open artist, album or playlist: its tracks
   let headTracks = $derived(pl ? plTracks : sel && !query ? visible : []);
-  let headCover = $state<string | null>(null);
-  $effect(() => {
-    const path = headTracks[0]?.path;
-    headCover = null;
-    if (path) coverOf(path).then((c) => headTracks[0]?.path === path && (headCover = c));
-  });
 
   function go(v: View) {
     view = v;
@@ -153,15 +146,6 @@
 <svelte:window onkeydown={onkey} />
 
 <div class="app">
-  <div class="brand">
-    <!-- a plinth: the block on its base -->
-    <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <rect x="6" y="2" width="8" height="10" rx="1.5" />
-      <rect x="2" y="13.5" width="16" height="4.5" rx="1.5" />
-    </svg>
-    <span>Plinth</span>
-  </div>
-
   <header class="top">
     <label class="search">
       <Search size={16} aria-hidden="true" />
@@ -184,16 +168,12 @@
       <button class="icon" onclick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
         {#if theme === "dark"}<Sun size={16} />{:else}<Moon size={16} />{/if}
       </button>
-      <button class="switcher" onclick={pick} title={library.folder ?? "Choose your music folder"}>
-        <Folder size={16} />
-        <span class="cell">{folderName ?? "Choose folder"}</span>
-      </button>
     </div>
   </header>
 
   <nav aria-label="Library">
     {#each nav as [v, label, Icon, n]}
-      <button class="nav" class:active={view === v && !pl} aria-current={view === v && !pl ? "page" : undefined} onclick={() => go(v)}>
+      <button class="nav lib" class:active={view === v && !pl} aria-current={view === v && !pl ? "page" : undefined} onclick={() => go(v)}>
         <Icon size={16} />
         <span>{label}</span>
         <span class="num count">{n}</span>
@@ -213,6 +193,10 @@
     {#if playlists.error}
       <p class="error" role="alert">{playlists.error}</p>
     {/if}
+    <button class="switcher" onclick={pick} title={library.folder ?? "Choose your music folder"}>
+      <Folder size={16} />
+      <span class="cell">{folderName ?? "Choose folder"}</span>
+    </button>
   </nav>
 
   <main>
@@ -242,11 +226,8 @@
         <ArrowLeft size={14} />
         {pl ? "Playlists" : kind === "albums" ? "Albums" : "Artists"}
       </button>
-      <section class="object">
-        <div class="art">
-          {#if headCover}<img src={headCover} alt="" />{:else}<ImageIcon size={28} strokeWidth={1.5} />{/if}
-        </div>
-        <div class="object-text">
+      <section class="title-row">
+        <div>
           {#if renaming && pl}
             <input
               class="rename"
@@ -266,9 +247,9 @@
             <h1 class="cell">{name}</h1>
           {/if}
           <p class="meta">
-            {#if kind === "albums"}{sel!.v.split("\0")[0]} ·{/if}
-            {#if kind === "artists"}{plural(albumCount(headTracks), "album")} ·{/if}
-            {plural(headTracks.length, "track")} · {fmt(totalSecs(headTracks))}
+            {#if kind === "albums"}{sel!.v.split("\0")[0]} •{/if}
+            {#if kind === "artists"}{plural(albumCount(headTracks), "album")} •{/if}
+            {plural(headTracks.length, "track")} • {fmt(totalSecs(headTracks))}
           </p>
         </div>
         <div class="actions">
@@ -296,7 +277,7 @@
           <p class="meta">
             {query
               ? `${visible.length} of ${plural(library.tracks.length, "track")} match “${query}”`
-              : `${plural(library.tracks.length, "track")} · ${fmt(totalSecs(library.tracks))}`}
+              : `${plural(albums.length, "album")} • ${plural(library.tracks.length, "track")} • ${fmt(totalSecs(library.tracks))}`}
           </p>
         </div>
         <button class="btn primary" onclick={() => playAll(visible)} disabled={!visible.length}>Play</button>
@@ -373,33 +354,23 @@
 <PlayerBar />
 
 <style>
-  /* Ruled T-frame: brand + nav on the left, top bar across, one ground, split only by 1px rules */
+  /* sidebar runs the full height; the toolbar and list share the column beside it */
   .app {
     display: grid;
     grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     grid-template-rows: var(--top-h) minmax(0, 1fr);
     height: calc(100vh - var(--bar-h));
   }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 20px;
-    font-size: 16px;
-    font-weight: 600;
-    border-right: 1px solid var(--rule);
-    border-bottom: 1px solid var(--rule);
-  }
-  .mark {
-    fill: var(--accent);
+  nav {
+    grid-row: 1 / -1;
+    grid-column: 1;
   }
   .top {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 0 0 0 var(--pad);
-    border-bottom: 1px solid var(--rule);
+    padding: 0 var(--pad);
   }
   .search {
     display: flex;
@@ -442,16 +413,14 @@
     gap: 16px;
     height: 100%;
   }
-  /* the library folder is the app's scope, so it sits at the right end behind a full-height rule */
+  /* the library folder is the app's scope, so it stays pinned to the foot of the sidebar */
   .switcher {
     all: unset;
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 100%;
-    max-width: 14rem;
-    padding: 0 20px;
-    border-left: 1px solid var(--rule);
+    margin-top: auto;
+    padding: 12px 10px 4px;
     color: var(--muted);
     cursor: pointer;
   }
@@ -459,7 +428,7 @@
     color: var(--text);
   }
   .switcher:focus-visible {
-    outline-offset: -2px;
+    outline: 2px solid var(--accent);
   }
 
   nav {
@@ -484,6 +453,13 @@
   .nav:hover {
     color: var(--text);
   }
+  /* library sections as boxed buttons, count on the right */
+  .lib {
+    margin-bottom: 4px;
+    min-height: 36px;
+    border: 1px solid var(--rule);
+    font-weight: 600;
+  }
   .count {
     margin-left: auto;
     color: var(--faint);
@@ -493,6 +469,15 @@
     color: var(--text);
     background: light-dark(var(--raised), transparent);
     font-weight: 500;
+  }
+  .lib.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .lib.active .count {
+    color: inherit;
   }
   .nav:focus-visible {
     outline: 2px solid var(--accent);
@@ -521,22 +506,34 @@
   }
 
   main {
-    padding: 28px var(--pad) 40px;
+    padding: 0 var(--pad) 40px;
     overflow: auto;
   }
   .title-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-row);
+    background: var(--raised);
+  }
+  /* name, then a short summary on the same line */
+  .title-row > div:first-child {
+    display: flex;
+    flex: 1;
+    align-items: baseline;
+    gap: 16px;
+    min-width: 0;
   }
   h1 {
     font-size: var(--fs-title);
     line-height: 1.3;
   }
   .meta {
-    margin: 4px 0 0;
+    margin: 0;
+    flex: none;
     color: var(--muted);
   }
   .back {
@@ -544,7 +541,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-size: var(--fs-small);
     color: var(--muted);
     cursor: pointer;
@@ -554,36 +551,6 @@
   }
   .back:focus-visible {
     outline: 2px solid var(--accent);
-  }
-  /* the open album, artist or playlist: one card led by its cover */
-  .object {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-    padding: 16px;
-    border-radius: var(--radius-card);
-    background: var(--surface);
-  }
-  .art {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 112px;
-    height: 112px;
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--raised);
-    color: var(--faint);
-  }
-  .art img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .object-text {
-    flex: 1;
-    min-width: 0;
   }
   .rename {
     width: 100%;

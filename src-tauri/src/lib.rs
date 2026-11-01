@@ -433,7 +433,7 @@ mod tests {
         // unreadable files stay listed: filename title, no tags, zero duration
         assert_eq!(got[0].title, "a");
         assert!(got[0].artist.is_none() && got[0].secs == 0.0);
-        assert!(got[1].path.ends_with("sub/b.flac"));
+        assert!(Path::new(&got[1].path).ends_with("sub/b.flac"));
     }
 
     #[test]

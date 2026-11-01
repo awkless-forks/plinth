@@ -10,6 +10,8 @@
   import LinkIcon from "@lucide/svelte/icons/link";
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import ImageIcon from "@lucide/svelte/icons/image";
+  import Sun from "@lucide/svelte/icons/sun";
+  import Moon from "@lucide/svelte/icons/moon";
   import { player, play, toggle, seek, setVolume, next, prev, fmt } from "$lib/player.svelte";
   import { library, pick, artistOf, albumKey, group, matches, coverOf, type Track } from "$lib/library.svelte";
   import { playlists, add, rename, remove, moveTrack, type Playlist } from "$lib/playlists.svelte";
@@ -21,6 +23,20 @@
   let showURL = $state(false);
   let query = $state("");
   let searchEl: HTMLInputElement;
+
+  // light/dark switch; until the user picks one, the system setting decides.
+  // app.css colors use light-dark(), which follows color-scheme on the root element
+  type Theme = "light" | "dark";
+  let theme = $state<Theme>(
+    (localStorage.getItem("theme") as Theme | null) ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+  );
+  $effect(() => {
+    document.documentElement.style.colorScheme = theme;
+  });
+  function toggleTheme() {
+    theme = theme === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", theme);
+  }
 
   type View = "artists" | "albums" | "tracks" | "playlists";
   let view = $state<View>("tracks");
@@ -36,12 +52,12 @@
         ? library.tracks.filter((t) => (sel!.kind === "artists" ? artistOf(t) : albumKey(t)) === sel!.v)
         : library.tracks,
   );
-  const nav = [
-    ["artists", "Artists", MicVocal],
-    ["albums", "Albums", Disc3],
-    ["tracks", "Tracks", Music],
-    ["playlists", "Playlists", ListMusic],
-  ] as const;
+  let nav = $derived([
+    ["artists", "Artists", MicVocal, artists.length],
+    ["albums", "Albums", Disc3, albums.length],
+    ["tracks", "Tracks", Music, library.tracks.length],
+    ["playlists", "Playlists", ListMusic, playlists.playlists.length],
+  ] as const);
 
   // playlists store paths; a file that left the library still shows, so row indexes stay right
   let byPath = $derived(new Map(library.tracks.map((t) => [t.path, t])));
@@ -165,6 +181,9 @@
     </label>
     <div class="top-actions">
       <button class="btn" aria-expanded={showURL} onclick={() => (showURL = !showURL)}><LinkIcon size={16} /> Add from URL</button>
+      <button class="icon" onclick={toggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+        {#if theme === "dark"}<Sun size={16} />{:else}<Moon size={16} />{/if}
+      </button>
       <button class="switcher" onclick={pick} title={library.folder ?? "Choose your music folder"}>
         <Folder size={16} />
         <span class="cell">{folderName ?? "Choose folder"}</span>
@@ -173,10 +192,11 @@
   </header>
 
   <nav aria-label="Library">
-    {#each nav as [v, label, Icon]}
+    {#each nav as [v, label, Icon, n]}
       <button class="nav" class:active={view === v && !pl} aria-current={view === v && !pl ? "page" : undefined} onclick={() => go(v)}>
         <Icon size={16} />
         <span>{label}</span>
+        <span class="num count">{n}</span>
       </button>
     {/each}
     <div class="group">
@@ -463,6 +483,10 @@
   }
   .nav:hover {
     color: var(--text);
+  }
+  .count {
+    margin-left: auto;
+    color: var(--faint);
   }
   /* active by brightness on dark, a grey pill on light */
   .nav.active {

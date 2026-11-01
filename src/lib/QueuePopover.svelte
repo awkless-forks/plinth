@@ -130,42 +130,40 @@
     position: absolute;
     right: 0;
     bottom: calc(100% + 0.75rem);
-    width: 22rem;
-    height: min(24rem, 60vh); /* fixed size; the lists scroll inside */
+    width: 24rem;
+    height: min(28rem, 60vh); /* fixed size; the lists scroll inside */
     display: flex;
     flex-direction: column;
-    background: var(--surface);
-    border: 2px solid var(--text);
-    border-radius: var(--r);
-    box-shadow: 0 8px 24px #0003;
+    overflow: hidden;
+    background: light-dark(#fff, #242424); /* a step lighter than the page: it sits above it */
+    border-radius: 16px;
+    box-shadow: 0 12px 32px light-dark(#0002, #0005); /* it floats, so it is the one thing with a shadow */
   }
   header {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--line);
-    border-bottom: 2px solid var(--text);
+    gap: 4px;
+    padding: 12px 12px 8px 20px;
   }
   h2 {
     flex: 1;
-    margin: 0;
-    font-size: 1.1rem;
+    font-size: 16px;
   }
   .lists {
     flex: 1;
     min-height: 0;
-    padding: 0.5rem;
+    padding: 0 8px 8px;
     overflow: auto;
   }
   .past {
     padding-left: 2rem;
-    opacity: 0.6;
+    color: var(--faint);
   }
   h3 {
-    margin: 0.75rem 0 0.25rem;
-    font-size: 0.85rem;
-    opacity: 0.6;
+    margin: 16px 12px 4px;
+    font-size: var(--fs-small);
+    font-weight: 400;
+    color: var(--faint);
   }
   ol {
     list-style: none;
@@ -177,13 +175,13 @@
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    min-height: 2rem;
+    gap: 4px;
+    min-height: 36px;
   }
   .current {
-    background: color-mix(in srgb, var(--accent) 25%, transparent);
-    border-radius: var(--r);
-    font-weight: 600;
+    background: var(--raised);
+    border-radius: var(--radius-row);
+    font-weight: 500;
   }
   .mark {
     display: grid;
@@ -198,7 +196,7 @@
     width: 1.75rem;
     height: 1.75rem;
     cursor: grab;
-    opacity: 0.6;
+    color: var(--faint);
     touch-action: none; /* keep pointer drags from scrolling the list */
     user-select: none;
   }
@@ -206,34 +204,40 @@
     all: unset;
     flex: 1;
     min-width: 0;
-    padding: 0.25rem;
-    border-radius: var(--r);
+    padding: 8px;
+    border-radius: var(--radius-row);
     cursor: pointer;
   }
   .track:hover {
-    background: var(--line);
+    background: var(--raised);
   }
   .empty {
-    padding: 0.5rem;
-    opacity: 0.6;
+    padding: 8px 12px;
+    color: var(--muted);
   }
   footer {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0.75rem;
-    border-top: 1px solid var(--line);
+    padding: 12px 20px;
+    border-top: 1px solid var(--rule);
   }
   .link {
     all: unset;
+    color: var(--muted);
     cursor: pointer;
-    text-decoration: underline;
+  }
+  .link:hover:not(:disabled) {
+    color: var(--text);
+  }
+  .link:focus-visible {
+    outline: 2px solid var(--accent);
   }
   .link:disabled {
     opacity: 0.4;
     cursor: default;
   }
   .icon {
-    width: 2rem;
-    height: 2rem;
+    width: 32px;
+    height: 32px;
   }
 </style>

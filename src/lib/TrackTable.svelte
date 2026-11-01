@@ -2,6 +2,8 @@
   import { player, play, fmt } from "$lib/player.svelte";
   import { artistOf, type Track } from "$lib/library.svelte";
   import { reorder } from "$lib/reorder";
+  import AudioLines from "@lucide/svelte/icons/audio-lines";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
 
   let {
     tracks,
@@ -22,13 +24,15 @@
 </script>
 
 <div class="row head" class:handles={onmove}>
-  <span>#</span><span>Title</span><span>Artist</span><span>Album</span><span>Year</span><span>Time</span>
+  <span class="num">#</span><span>Title</span><span>Artist</span><span>Album</span><span class="num">Year</span><span class="num">Time</span>
 </div>
 <!-- keyed by index: a playlist can hold the same path twice -->
 {#each tracks as t, i (onmove ? i : t.path)}
   <div class="item" data-item>
     {#if onmove}
-      <button class="handle" aria-label="Move {t.title} (Alt+Up/Down)" use:reorder={{ index: i, count: tracks.length, onmove }}>≡</button>
+      <button class="handle" aria-label="Move {t.title} (Alt+Up/Down)" use:reorder={{ index: i, count: tracks.length, onmove }}
+        ><GripVertical size={16} /></button
+      >
     {/if}
     <button
       class="row"
@@ -43,16 +47,20 @@
         onmenu(t, i);
       }}
     >
-      <span class="n">{player.state === "playing" && t.path === player.track ? "▶" : onmove ? i + 1 : (t.track_no ?? i + 1)}</span>
-      <span class="cell">{t.title}</span>
+      <span class="num">
+        {#if player.state === "playing" && t.path === player.track}<AudioLines size={14} aria-label="Playing" />{:else}{onmove
+            ? i + 1
+            : (t.track_no ?? i + 1)}{/if}
+      </span>
+      <span class="cell id">{t.title}</span>
       <span class="cell">{t.artist ?? artistOf(t)}</span>
       <span class="cell">{t.album ?? "—"}</span>
-      <span class="n">{t.year ?? ""}</span>
-      <span class="n">{t.secs ? fmt(t.secs) : ""}</span>
+      <span class="num">{t.year ?? "—"}</span>
+      <span class="num">{t.secs ? fmt(t.secs) : "—"}</span>
     </button>
   </div>
 {:else}
-  <p><em>{empty}</em></p>
+  <p class="empty">{empty}</p>
 {/each}
 
 <style>
@@ -62,13 +70,15 @@
   .handle {
     all: unset;
     flex: none;
+    display: grid;
+    place-items: center;
     width: 1.5rem;
-    text-align: center;
+    color: var(--faint);
     cursor: grab;
     touch-action: none; /* keep pointer drags from scrolling the list */
     user-select: none;
   }
   .handles {
-    padding-left: calc(1.5rem + 6px);
+    padding-left: calc(1.5rem + 12px);
   }
 </style>

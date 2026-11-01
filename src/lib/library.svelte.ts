@@ -27,6 +27,11 @@ export async function pick() {
   const dir = await open({ directory: true });
   if (dir) load(dir);
 }
+// cover art for a track, cached per path so skipping back or reopening an album doesn't re-read the file
+const covers = new Map<string, Promise<string | null>>();
+export const coverOf = (path: string) =>
+  covers.get(path) ?? covers.set(path, invoke<string | null>("cover_art", { path })).get(path)!;
+
 const saved = localStorage.getItem("folder");
 if (saved) load(saved);
 

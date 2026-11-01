@@ -72,39 +72,41 @@
     >
   </div>
 
-  <div class="controls">
-    <button class="icon" aria-label="Previous" onclick={prev} disabled={!canPrev()}><SkipBack size={18} fill="currentColor" /></button>
-    <button class="play" aria-label={player.state === "playing" ? "Pause" : "Play"} onclick={toggle} disabled={!player.track}>
-      {#if player.state === "playing"}<Pause size={16} fill="currentColor" />{:else}<Play size={16} fill="currentColor" />{/if}
-    </button>
-    <button class="icon" aria-label="Next" onclick={next} disabled={upcoming() <= 0}><SkipForward size={18} fill="currentColor" /></button>
-    <button class="icon" class:on={player.shuffle} aria-pressed={player.shuffle} aria-label="Shuffle" onclick={toggleShuffle}>
-      <Shuffle size={16} />
-    </button>
-  </div>
-
-  <div class="progress">
-    <span class="time">{fmt(shownPos)}</span>
-    <input
-      class="seek"
-      type="range"
-      aria-label="Position"
-      min="0"
-      max={player.duration}
-      step="0.5"
-      value={shownPos}
-      disabled={!player.track}
-      onpointerdown={() => {
-        scrubPos = player.pos;
-        scrubbing = true;
-      }}
-      oninput={(e) => (scrubPos = +e.currentTarget.value)}
-      onchange={(e) => {
-        seek(+e.currentTarget.value);
-        scrubbing = false;
-      }}
-    />
-    <span class="time">{fmt(player.duration)}</span>
+  <div class="center">
+    <div class="controls">
+      <span class="spacer"></span>
+      <button class="icon" aria-label="Previous" onclick={prev} disabled={!canPrev()}><SkipBack size={18} fill="currentColor" /></button>
+      <button class="play" aria-label={player.state === "playing" ? "Pause" : "Play"} onclick={toggle} disabled={!player.track}>
+        {#if player.state === "playing"}<Pause size={16} fill="currentColor" />{:else}<Play size={16} fill="currentColor" />{/if}
+      </button>
+      <button class="icon" aria-label="Next" onclick={next} disabled={upcoming() <= 0}><SkipForward size={18} fill="currentColor" /></button>
+      <button class="icon" class:on={player.shuffle} aria-pressed={player.shuffle} aria-label="Shuffle" onclick={toggleShuffle}>
+        <Shuffle size={16} />
+      </button>
+    </div>
+    <div class="progress">
+      <span class="time">{fmt(shownPos)}</span>
+      <input
+        class="seek"
+        type="range"
+        aria-label="Position"
+        min="0"
+        max={player.duration}
+        step="0.5"
+        value={shownPos}
+        disabled={!player.track}
+        onpointerdown={() => {
+          scrubPos = player.pos;
+          scrubbing = true;
+        }}
+        oninput={(e) => (scrubPos = +e.currentTarget.value)}
+        onchange={(e) => {
+          seek(+e.currentTarget.value);
+          scrubbing = false;
+        }}
+      />
+      <span class="time">{fmt(player.duration)}</span>
+    </div>
   </div>
 
   <div class="side">
@@ -128,8 +130,8 @@
     left: 0;
     right: 0;
     display: grid;
-    /* the ends never shrink below their controls; the progress bar takes what is left */
-    grid-template-columns: minmax(10rem, 1fr) max-content minmax(8rem, 2fr) max-content;
+    /* the right side never shrinks below its controls, so it can't slide under the progress times */
+    grid-template-columns: minmax(16rem, 1fr) minmax(12rem, 34rem) minmax(max-content, 1fr);
     gap: 16px;
     align-items: center;
     box-sizing: border-box;
@@ -141,12 +143,12 @@
   .now {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     min-width: 0;
   }
   .cover {
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     flex: none;
     display: grid;
     place-items: center;
@@ -161,8 +163,8 @@
     object-fit: cover;
   }
   .meta {
-    flex: 1;
     min-width: 0;
+    max-width: 22rem;
   }
   .title {
     overflow: hidden;
@@ -175,14 +177,22 @@
     font-size: 14px;
     color: var(--muted);
   }
+  .center {
+    display: grid;
+    gap: 10px;
+  }
   .controls {
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 2px;
   }
   .controls .icon {
     width: 32px;
     height: 32px;
+  }
+  .spacer {
+    width: 32px; /* balances the shuffle button so play sits on the centre line */
   }
   .play {
     display: grid;

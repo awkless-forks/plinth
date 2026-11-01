@@ -95,18 +95,16 @@
 <style>
   .sort {
     all: unset;
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     cursor: pointer;
   }
-  /* the arrow hangs left of a right-aligned label, so the label stays over its column and clears its neighbour */
-  .sort.num {
-    position: relative;
-  }
-  .sort.num :global(svg) {
+  /* the arrow hangs right of every label, so no label moves when a column is sorted */
+  .sort :global(svg) {
     position: absolute;
-    right: calc(100% + 2px);
+    left: calc(100% + 2px);
   }
   .sort:hover {
     color: var(--text);

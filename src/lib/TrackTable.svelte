@@ -46,7 +46,7 @@
     {#if onmove}
       <span class:num={isNum}>{label}</span>
     {:else}
-      <span role="columnheader" aria-sort={sort?.col === c ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+      <span class:num={isNum} role="columnheader" aria-sort={sort?.col === c ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
         <button class="sort" class:num={isNum} onclick={() => sortOn(c)}>
           {label}
           {#if sort?.col === c}{#if sort.dir === "asc"}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if}{/if}
@@ -100,9 +100,13 @@
     gap: 4px;
     cursor: pointer;
   }
+  /* the arrow hangs left of a right-aligned label, so the label stays over its column and clears its neighbour */
   .sort.num {
-    justify-content: flex-end;
-    width: 100%;
+    position: relative;
+  }
+  .sort.num :global(svg) {
+    position: absolute;
+    right: calc(100% + 2px);
   }
   .sort:hover {
     color: var(--text);

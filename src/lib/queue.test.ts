@@ -1,6 +1,6 @@
 // @ts-expect-error bun's built-in test module; run with `bun test src/lib` (no @types/bun installed)
-import { expect, test } from "bun:test";
-import { moveItem, shuffleAfter, shuffleFrom } from "./queue";
+import { describe, expect, test } from "bun:test";
+import { moveItem, shuffleAfter, shuffleFrom, stepBack } from "./queue";
 
 test("moveItem keeps the playing track current", () => {
   const q = ["a", "b", "c", "d", "e"]; // "c" playing, at = 2
@@ -40,4 +40,23 @@ test("shuffleFrom puts the current item first and keeps all the others", () => {
   expect([...s].sort()).toEqual(q);
   expect([...shuffleFrom(q, -1)].sort()).toEqual(q); // nothing playing: shuffle all
   expect(q).toEqual(["a", "b", "c", "d"]); // input not changed
+});
+
+describe("stepBack", () => {
+  const context = ["a", "b", "c"];
+  test("list track back to the one before it", () => {
+    expect(stepBack({ context, at: 1, queue: [], fromQueue: false }, "b", "a")).toEqual({ at: 0, queue: [], fromQueue: false });
+  });
+  test("queued track back to the previous queued track returns to the queue", () => {
+    expect(stepBack({ context, at: 1, queue: ["z"], fromQueue: true }, "y", "x")).toEqual({ at: 1, queue: ["y", "z"], fromQueue: true });
+  });
+  test("queued track back to the list track before it", () => {
+    expect(stepBack({ context, at: 1, queue: [], fromQueue: true }, "x", "b")).toEqual({ at: 1, queue: ["x"], fromQueue: false });
+  });
+  test("list track back to a queued track leaves the list track next", () => {
+    expect(stepBack({ context, at: 1, queue: [], fromQueue: false }, "b", "x")).toEqual({ at: 0, queue: [], fromQueue: true });
+  });
+  test("first list track back to a track from another list", () => {
+    expect(stepBack({ context, at: 0, queue: [], fromQueue: false }, "a", "old")).toEqual({ at: -1, queue: [], fromQueue: true });
+  });
 });

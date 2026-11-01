@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { moveItem, shuffleFrom } from "$lib/queue";
+import { moveItem, shuffleFrom, stepBack } from "$lib/queue";
 
 type PlayState = "playing" | "paused" | "stopped";
 
@@ -64,7 +64,7 @@ export const playAt = (i: number) => {
 };
 // play one track (from history) without changing the context or the queue
 export function replay(path: string) {
-  player.fromQueue = true; // so ⏮ goes back to the list and ⏭ goes on with queue/list
+  player.fromQueue = true; // ⏭ goes on with queue/list
   return start(path);
 }
 // play queue item k; the items before it are skipped, like clicking ahead in Spotify's queue
@@ -93,17 +93,21 @@ export function play(path: string, context: string[], i = context.indexOf(path))
 
 export const contextLeft = () => Math.max(player.context.length - player.at - 1, 0);
 export const upcoming = () => player.queue.length + contextLeft();
-export const canPrev = () => (player.fromQueue ? player.at >= 0 : player.at > 0);
+export const canPrev = () => player.history.length > 0;
 
 export function next() {
   if (player.queue.length) playQueued(0);
   else if (contextLeft()) playAt(player.at + 1);
 }
-// from a queued track, "previous" is the context track that played before it
+// shortcut: a track replayed from history also goes back into the queue; mark replays if that annoys anyone
 export function prev() {
-  if (player.fromQueue) {
-    if (player.at >= 0) playAt(player.at);
-  } else if (player.at > 0) playAt(player.at - 1);
+  const path = player.history.at(-1);
+  if (!path) return;
+  player.history = player.history.slice(0, -1);
+  if (now) Object.assign(player, stepBack(player, now, path));
+  dropUndo(); // the queue moved; an old snapshot would bring it back wrong
+  now = path;
+  return invoke("play", { path });
 }
 
 // shuffle mixes every other context track, also the ones already played; the hand-made queue keeps its order

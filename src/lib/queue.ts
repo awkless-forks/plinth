@@ -26,3 +26,15 @@ export function moveItem<T>(items: T[], at: number, from: number, to: number): [
   else if (from > at && to <= at) at++;
   return [out, at];
 }
+
+// where the lists stand after going back from `current` to `path`, the last track in history:
+// a queued track returns to the queue and a list track stays ahead, so next plays it again
+export function stepBack<T>(
+  { context, at, queue, fromQueue }: { context: T[]; at: number; queue: T[]; fromQueue: boolean },
+  current: T,
+  path: T,
+) {
+  const q = fromQueue ? [current, ...queue] : queue;
+  const a = fromQueue ? at : at - 1;
+  return { at: a, queue: q, fromQueue: path !== context[a] };
+}

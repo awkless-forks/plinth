@@ -79,20 +79,40 @@
 <style>
   .download {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 8px;
+    margin-bottom: 20px;
   }
   .download input {
     flex: 1;
+    height: 36px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 1px solid var(--control);
+    border-radius: 999px;
+    background: var(--ground);
+  }
+  .download button {
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .download button:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
   .status {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 6px 10px;
-    margin-bottom: 0.75rem;
-    border-radius: var(--r);
-    background: var(--line);
+    gap: 12px;
+    padding: 8px 14px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-row);
+    background: var(--surface);
   }
   .status progress {
     flex: none;
@@ -103,6 +123,11 @@
     flex: 1;
   }
   .status.error {
-    color: crimson;
+    color: var(--negative);
+  }
+  .status.error button {
+    border: none;
+    background: none;
+    cursor: pointer;
   }
 </style>

@@ -1,22 +1,45 @@
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Variable.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+/* Flat dark: one ground for shell and page (#121212, not true black, which read too dark), surfaces lifted by lightness instead of lines,
+   and colour only on data (the playing track, the progress). Light mode mirrors it. */
 :root {
-  font:
-    13px/1.4 system-ui,
-    sans-serif;
   color-scheme: light dark;
-  --bg: light-dark(#fafafa, #121214);
-  --surface: light-dark(#fff, #1c1c20);
-  --text: light-dark(#111, #eee);
-  --muted: light-dark(#777, #888);
-  --accent: #6366f1;
-  --line: light-dark(#0001, #fff1);
-  --r: 6px;
+  font: 400 13px/1.5 "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  --ground: light-dark(#fff, #121212);
+  --surface: light-dark(#f5f5f5, #1c1c1c);
+  --raised: light-dark(#ebebeb, #2c2c2c);
+  --rule: light-dark(#ededed, #262626);
+  --control: light-dark(#d1d5db, #4a4a4a);
+  --text: light-dark(#111, #f0f0f0);
+  --muted: light-dark(#5f6368, #b4b4b4);
+  --faint: light-dark(#6b6b6b, #949494);
+  --accent: light-dark(#0066cc, #08f); /* Plinth blue; darker on white so text keeps 4.5:1 */
+  --primary: light-dark(#111, #f0f0f0); /* the one filled control, made primary by inversion */
+  --on-primary: light-dark(#fff, #000);
+  --negative: light-dark(#c4242a, #e5484d);
+  --radius-card: 20px;
+  --radius-row: 8px;
+  --sidebar-w: 220px;
+  --top-h: 64px;
+  --bar-h: 9rem; /* player bar: fixed so it can't jump, and the page leaves room for it */
+  --gap: 14px;
+  --pad: 29px;
+  --fs-title: 20px;
+  --fs-small: 12px;
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--ground);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
-button {
+button,
+input {
   font: inherit;
   color: inherit;
 }
@@ -24,44 +47,124 @@ button {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* round icon button (Lucide icons), shared by PlayerBar and QueuePopover */
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface);
+}
+.icon:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.icon.on {
+  color: var(--accent); /* shuffle / favorite while on */
+}
+
+/* pill buttons: one filled primary per screen, the rest outlined */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  background: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  background: var(--surface);
+}
+.btn.primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--primary);
+  opacity: 0.85;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.btn.danger {
+  color: var(--negative);
+}
 
 /* list tables, shared by +page.svelte and TrackTable.svelte */
-.n {
-  font-family: ui-monospace, monospace;
-  font-size: 11px;
-  opacity: 0.6;
-}
 .row {
   all: unset;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: var(--cols, 2.5rem 3fr 2fr 2fr 3rem 3rem);
-  gap: 0.5rem;
+  grid-template-columns: var(--cols, 2.5rem 3fr 2fr 1.4fr 5rem 5rem);
+  gap: 8px;
+  align-items: center;
   width: 100%;
-  padding: 3px 6px;
-  border-radius: var(--r);
+  min-height: 28px;
+  padding: 0 20px 0 6px; /* the right side leaves room for a sort arrow past the last column */
+  border-radius: var(--radius-row);
+  color: var(--muted);
+}
+/* narrow windows: the text columns need the room more than Year and Time do */
+@media (max-width: 900px) {
+  .row {
+    --cols: 2.5rem 3fr 2fr 2fr 3.5rem 3.5rem;
+  }
+}
+.row .id {
+  color: var(--text); /* only the identity column gets the full ink */
 }
 button.row {
   cursor: pointer;
 }
 button.row:hover {
-  background: var(--line);
+  background: var(--surface);
 }
 button.row.active {
-  color: var(--accent);
-  font-weight: 600;
-  /* the playing song stays marked where it is in the list */
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent); /* the playing song stays marked where it is in the list */
+}
+button.row.active .id,
+button.row.active .num:first-child {
+  color: var(--accent); /* the playing track: its title and marker only */
 }
 .head {
-  padding: 2px 6px;
-  text-transform: capitalize;
-  opacity: 0.6;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
+  min-height: 28px;
+  font-size: var(--fs-small);
+  color: var(--faint);
+}
+.num {
+  text-align: right;
 }
 .cell {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.empty {
+  margin: 0;
+  padding: 24px 12px;
+  color: var(--muted);
 }
